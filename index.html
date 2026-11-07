@@ -149,6 +149,7 @@ main.wrap{padding-block:20px 48px;display:grid;gap:26px}
 .diag{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
 .btn-s{font-size:12.5px;padding:4px 12px}
 .diag-msg{font-size:12.5px;font-weight:700;color:var(--accent);max-width:46em}
+.cal-msg{font-size:12.5px;font-weight:700;color:var(--muted);max-width:46em}
 .ex-phase{justify-self:start;font-size:13px;font-weight:900;color:var(--target);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:2px 12px}
 .prog{height:12px;border-radius:6px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
 .prog-bar{display:block;height:100%;width:0;background:var(--target);border-radius:6px}
@@ -264,6 +265,7 @@ h2{margin:0 0 12px;font-size:20px;font-weight:900;text-wrap:balance}
         <div class="cents-lab"><span>少し低い</span><span>ちょうど</span><span>少し高い</span></div>
       </div>
       <div class="lvl"><span>マイクに入る音</span><div class="lvl-track"><i class="lvl-bar" id="lvBar"></i></div></div>
+      <div class="diag"><button class="btn btn-s" id="calBtn" type="button">まわりの音を測る（3秒だまる）</button><button class="btn btn-s" id="calClear" type="button" hidden>測ったのを消す</button><span class="cal-msg" id="calMsg"></span></div>
       <div class="diag"><button class="btn btn-s" id="diagBtn" type="button">拾えないときの録音（8秒）</button><span class="diag-msg" id="diagMsg"></span></div>
       <p class="mic-err" id="micErr" hidden></p>
       <p class="note-s">※ hiA・mid2G はカラオケでよく使う高さの書き方。ラ（A）を境に low → mid1 → mid2 → hi と段が上がる（hiA ＝ 440Hz）</p>
@@ -419,7 +421,7 @@ async function fillMics() {
   });
   $('micSelWrap').hidden = list.length === 0;
 }
-function resetDetector() { floor = 0.0005; lastV = -9; rawQ.length = 0; outLast = null; level = 0; }
+function resetDetector() { floor = 0.0005; V.on = false; V.lastT = -9; V.cand = []; V.jump = []; rawQ.length = 0; outLast = null; level = 0; }
 // マイクを開き直す（別のマイクを選んだとき・雑音消しを切り替えたとき。雑音消しは開き直した音から効く）
 async function reopenMic(id) {
   if (!A.on) return;
@@ -491,6 +493,28 @@ if (FX.token) {
   addEventListener('pagehide', () => { try { navigator.sendBeacon('/api/bye', new Blob([JSON.stringify({ token: FX.token })], { type: 'text/plain' })); } catch (e) {} });
 }
 if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { if (A.on) fillMics(); });
+
+/* まわりの音を測る：3秒だまっている間の音の大きさの90%点を覚え（R.noise）、それより十分大きい音だけを声として扱う。
+   冷蔵庫のうなりのように本当にくり返す雑音は、波の形では声と見分けられないので、大きさで分ける（スマホ向け） */
+let CAL = null;
+function showCal() {
+  $('calMsg').textContent = R.noise ? `覚えている：まわりの音 ${Math.round(20 * Math.log10(R.noise))}dB` : '';
+  $('calClear').hidden = !R.noise;
+}
+function calStep(t) {
+  CAL.vals.push(level);
+  const left = 3 - (t - CAL.t0);
+  $('calMsg').textContent = `測っています。だまって（のこり ${Math.max(0, Math.ceil(left))}秒）`;
+  if (left > 0) return;
+  const v = CAL.vals.sort((x, y) => x - y);
+  R.noise = v[Math.floor(v.length * 0.9)] || 0; noiseCeil = R.noise; dirty = true; saveR();
+  CAL = null; $('calBtn').disabled = false; resetDetector(); showCal();
+}
+$('calBtn').addEventListener('click', async () => {
+  if (!(await startMic())) return;
+  CAL = { t0: A.ctx.currentTime, vals: [] }; $('calBtn').disabled = true;
+});
+$('calClear').addEventListener('click', () => { R.noise = 0; noiseCeil = 0; dirty = true; saveR(); showCal(); });
 
 /* 拾えないときの録音：マイクから届いた音をそのまま8秒、WAV でダウンロードに保存する。
    マイクの設定（Chrome が雑音消しなどをかけていないか）と、1回ごとの判定の値もファイルの中に入れる */
@@ -565,17 +589,43 @@ const chime = t0 => { playNote(84, t0, 0.14, 0.15); playNote(88, t0 + 0.11, 0.22
    いまは声を出していない間の部屋の雑音の大きさを覚え、その1.6倍より大きければ調べる。声かどうかは「波の形がくり返しているか」で決める
    直し②：「あー」を伸ばすと線が切れて戻らなかった。一瞬小さくなった声を雑音として覚え直していたのと、
    まっすぐ伸ばした 120・150Hz などの声を電気のブーンと取り違えていたため。声が続いている間（直前0.35秒に声があった）は
-   雑音を覚え直さず、基準もゆるめる。ブーンの判定はやめた */
-let nsdf = null, floor = 0.0005, lastV = -9, level = 0;
-const learn = rms => { floor = rms < floor ? floor * 0.7 + rms * 0.3 : Math.min(rms, floor * 1.002); };
+   雑音を覚え直さず、基準もゆるめる。ブーンの判定はやめた
+   直し③：スマホで、声を出していないのに線が高く低く波打ち続けた。声の途中のゆるい基準に物音が引っかかると、
+   それで「声が続いている」ことになり、雑音を拾い続けていた。声は高さが少しの間そろって続くが、雑音は続かない。
+   そこで、始まりは「きびしい基準を3回続けて満たし、高さが±1半音にそろう」ときだけ声とみなす。
+   きびしい基準は「くり返しの強さ0.6以上・2周期先のくり返し（r2）0.6以上」（合成音で、声は10%点でも0.8以上、山のある雑音は中央0.4）。ゆるい基準も r2 0.35以上。
+   声の途中は「直前の高さから±1.5半音」だけをゆるい基準で拾い、跳んだ高さは3回続いたときだけ拾う */
+// noiseCeil: 「まわりの音を測る」で覚えた、まわりの音の大きい所（3秒の90%点）。始まりはその2倍、途中は1.3倍より大きい音だけを声として扱う
+let nsdf = null, floor = 0.0005, level = 0, noiseCeil = 0;
+const V = { on: false, last: 0, lastT: -9, cand: [], jump: [] };
+const learn = rms => { floor = rms < floor ? floor * 0.7 + rms * 0.3 : Math.min(rms, floor * 1.01); };
+const settled = q => { const md = median(q); return q.every(x => Math.abs(x - md) <= 1); };
 function detect(buf, sr, t) {
+  const a = measure(buf, sr); level = a.rms;
+  const m = a.f ? f2m(a.f) : null;
+  if (V.on && t - V.lastT > 0.35) { V.on = false; V.cand = []; V.jump = []; }
+  // 下限はごく小さくしておく（PC の雑音消しで声が弱められても拾えるように。雑音かどうかは「くり返し」と高さのそろい方で見分ける）
+  const strict = m != null && a.rms >= Math.max(0.0002, floor * 1.6, noiseCeil * 2) && a.top >= 0.6 && (a.r2 == null || a.r2 >= 0.6);
+  if (V.on) {
+    const loose = m != null && Math.abs(m - V.last) <= 1.5 && a.rms >= Math.max(0.00005, floor * 1.15, noiseCeil * 1.3) && a.top >= 0.33 && (a.r2 == null || a.r2 >= 0.35);
+    if (loose) { V.last = m; V.lastT = t; V.jump = []; return a.f; }
+    if (strict) {
+      V.jump.push(m); if (V.jump.length > 3) V.jump.shift();
+      if (V.jump.length === 3 && settled(V.jump)) { V.last = m; V.lastT = t; V.jump = []; return a.f; }
+    } else V.jump = [];
+    return null;                                          // 声の途中は、部屋の雑音を覚え直さない
+  }
+  if (!strict) { learn(a.rms); V.cand = []; return null; } // 声でない時だけ、部屋の雑音の大きさを覚える
+  V.cand.push(m); if (V.cand.length > 3) V.cand.shift();
+  if (V.cand.length === 3 && settled(V.cand)) { V.on = true; V.last = m; V.lastT = t; V.cand = []; return a.f; }
+  return null;
+}
+// 1回分の音の大きさ（rms）・くり返しの強さ（top）・2周期先のくり返し（r2。測れない低い声は null）・高さ（f。無ければ null）
+function measure(buf, sr) {
   const n = buf.length;
   let e = 0; for (let i = 0; i < n; i++) e += buf[i] * buf[i];
-  const rms = Math.sqrt(e / n); level = rms;
-  const going = t - lastV < 0.35;
-  const quiet = () => { if (!going) learn(rms); return null; };   // 声でない時だけ、部屋の雑音の大きさを覚える
-  // 下限はごく小さくしておく（PC の雑音消しで声が弱められても拾えるように。雑音かどうかは下の「くり返し」で見分ける）
-  if (rms < Math.max(going ? 0.00005 : 0.0002, floor * (going ? 1.15 : 1.6))) return quiet();
+  const rms = Math.sqrt(e / n);
+  if (rms < 0.00005) return { rms, top: 0, f: null };
   const maxTau = Math.min(n >> 1, Math.floor(sr / 62)); // 62Hz まで
   const minTau = Math.floor(sr / 1400);                 // 1400Hz まで
   if (!nsdf || nsdf.length < maxTau + 2) nsdf = new Float32Array(maxTau + 2);
@@ -592,16 +642,16 @@ function detect(buf, sr, t) {
     if (pos && tau >= minTau && c > best) { best = c; bi = tau; }
   }
   if (pos && bi > 0) peaks.push(bi);
-  if (!peaks.length) return quiet();
+  if (!peaks.length) return { rms, top: 0, f: null };
   let top = 0; for (const p of peaks) if (nsdf[p] > top) top = nsdf[p];
-  if (top < (going ? 0.33 : 0.45)) return quiet();     // くり返しが弱い（息・雑音）
+  if (top < 0.33) return { rms, top, f: null };          // くり返しが弱い（息・雑音）
   let tau = peaks[0];
   for (const p of peaks) { if (nsdf[p] >= 0.88 * top) { tau = p; break; } }
   const a = nsdf[tau - 1], b = nsdf[tau], c = nsdf[tau + 1], den = a - 2 * b + c;
   const f = sr / (tau + (den !== 0 ? 0.5 * (a - c) / den : 0));
-  if (f < 62 || f > 1400) return quiet();
-  lastV = t;
-  return f;
+  let r2 = null;
+  if (2 * tau + 3 <= maxTau) { r2 = -1; for (let k = 2 * tau - 3; k <= 2 * tau + 3; k++) if (nsdf[k] > r2) r2 = nsdf[k]; }
+  return { rms, top, r2, f: (f >= 62 && f <= 1400) ? f : null };
 }
 // 直近5回のうち2回以上拾えたら出す。はずれ値は落として平均。0.3秒までの取りこぼしは直前の高さでつなぐ
 const rawQ = []; let outLast = null, outT = -9;
@@ -982,11 +1032,13 @@ function tick() {
     if (!muted) track(t, m, dt);
     if (EX) EX.update(t, m, dt);
     showNow(m, muted, t);
+    if (CAL && !muted) calStep(t);
     if (t - lastKpi > 1) { lastKpi = t; renderKpis(); }
   }
   while (hist.length && hist[0].t < t - 9) hist.shift();
   draw(t);
 }
+noiseCeil = R.noise || 0; showCal();
 renderKpis(); renderHist(); requestAnimationFrame(frame);
 
 /* 点検用（発振器をつないで判定を試す） */
