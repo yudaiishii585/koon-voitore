@@ -1,0 +1,997 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>高音ボイトレ</title>
+<link rel="icon" href="icon/icon.png">
+<link rel="apple-touch-icon" href="icon/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#d6336c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="高音ボイトレ">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Zen+Kaku+Gothic+New:wght@400;700;900&display=swap">
+<style>
+/* 並べ方: 頭の帯（名前と4つの数字）→ 今の声と高さの流れを左右に → 練習中の帯 → 練習メニュー4枚 → 毎日の音域 → 注意
+   色の意味: 青 = 自分の声 / だいだい = お手本・目標 / 緑 = 合った / 灰 = 合わなかった / 桃 = ボタンと自己ベスト */
+:root{
+  --bg:#f4f6fa; --surface:#ffffff; --ink:#1b2130; --muted:#5a6375; --line:#dbe1ec;
+  --accent:#d6336c; --on-accent:#ffffff;
+  --voice:#1c6fd1; --target:#e8890c; --good:#2f9e44; --miss:#c5ccd8;
+  --hero-bg:#fdeef4; --mark:#ffe08a; --warn-bg:#fff8e5;
+  --f-disp:"Dela Gothic One","Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif;
+  --f-body:"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic","Meiryo",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12161d; --surface:#1b2029; --ink:#e7ebf2; --muted:#9ea7b8; --line:#2c3341;
+    --accent:#ff6b9c; --on-accent:#1b0a12;
+    --voice:#5aa9ff; --target:#ffa94d; --good:#5bd07a; --miss:#4b5465;
+    --hero-bg:#26191f; --mark:#6b5200; --warn-bg:#262113;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12161d; --surface:#1b2029; --ink:#e7ebf2; --muted:#9ea7b8; --line:#2c3341;
+  --accent:#ff6b9c; --on-accent:#1b0a12;
+  --voice:#5aa9ff; --target:#ffa94d; --good:#5bd07a; --miss:#4b5465;
+  --hero-bg:#26191f; --mark:#6b5200; --warn-bg:#262113;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.7}
+[hidden]{display:none!important}
+.wrap{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* 頭の帯 */
+.hero{background:var(--hero-bg);border-bottom:1px solid var(--line)}
+.hero-in{padding-block:22px 20px;display:grid;gap:16px}
+.hero-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+h1{margin:0;font-family:var(--f-disp);font-weight:400;font-size:clamp(30px,5vw,44px);line-height:1.1;letter-spacing:.02em;text-wrap:balance}
+.mic{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mic-state{font-size:13px;font-weight:700;color:var(--good)}
+.mic-sel{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--muted);min-width:0}
+.mic-sel select{font:inherit;font-weight:400;color:var(--ink);background:var(--surface);border:1.5px solid var(--line);border-radius:10px;padding:6px 8px;max-width:min(320px,62vw)}
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:820px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:grid;grid-template-rows:subgrid;grid-row:span 3;gap:2px}
+.kpi-l{font-size:12.5px;font-weight:700;color:var(--muted)}
+.kpi-v{font-family:var(--f-disp);font-size:clamp(24px,3.4vw,34px);line-height:1.15;font-variant-numeric:tabular-nums}
+.kpi-s{font-size:12px;color:var(--muted)}
+.kpi-best .kpi-v{color:var(--accent)}
+
+/* ボタン */
+.btn{font:inherit;font-weight:700;font-size:14px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);padding:7px 16px;cursor:pointer;line-height:1.4}
+.btn:hover{border-color:var(--accent)}
+.btn:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.btn-main{background:var(--accent);border-color:var(--accent);color:var(--on-accent);padding:11px 24px;font-size:16px}
+.btn-main.on{background:var(--surface);color:var(--accent)}
+
+/* 今の声と高さの流れ */
+main.wrap{padding-block:20px 48px;display:grid;gap:26px}
+.stage{display:grid;grid-template-columns:minmax(0,330px) minmax(0,1fr);gap:14px;align-items:stretch;scroll-margin-top:12px}
+@media (max-width:820px){.stage{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:16px}
+.now{padding:18px;display:flex;flex-direction:column;gap:12px}
+.now-l{font-size:12.5px;font-weight:700;color:var(--muted)}
+.now-note{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;min-height:72px}
+.now-big{font-family:var(--f-disp);font-size:60px;line-height:1.1;color:var(--voice)}
+.now-sol{font-size:26px;font-weight:900}
+.now-note.idle .now-big,.now-note.idle .now-sol{opacity:.35}
+.now-sub{font-size:14px;color:var(--muted);font-variant-numeric:tabular-nums;min-height:1.7em}
+.cents{display:grid;gap:4px}
+.cents-track{position:relative;height:16px;border-radius:8px;background:var(--bg);border:1px solid var(--line)}
+.cents-ok{position:absolute;top:0;bottom:0;left:35%;width:30%;background:var(--good);opacity:.2;border-radius:8px}
+.cents-mid{position:absolute;top:-3px;bottom:-3px;left:50%;width:2px;background:var(--muted);opacity:.6}
+.cents-dot{position:absolute;top:50%;left:50%;width:18px;height:18px;border-radius:50%;background:var(--voice);transform:translate(-50%,-50%);opacity:.25}
+.cents-dot.live{opacity:1}
+.cents-dot.ok{background:var(--good)}
+.cents-lab{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+.mic-err{margin:0;font-size:13.5px;font-weight:700;color:var(--accent)}
+.note-s{margin:auto 0 0;font-size:12px;color:var(--muted);line-height:1.6;max-width:46em}
+.graph{padding:10px 10px 8px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.graph canvas{width:100%;height:300px;display:block}
+@media (max-width:560px){.graph canvas{height:240px}}
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:12.5px;color:var(--muted);padding-inline:6px}
+.lg{display:inline-flex;align-items:center;gap:6px}
+.lg-sw{display:inline-block;width:18px;height:9px;border-radius:4px}
+.lg-voice{background:var(--voice);height:4px}
+.lg-target{background:var(--target);opacity:.5}
+.lg-hit{background:var(--good);opacity:.6}
+.lg-best{height:0;border-top:2px dashed var(--accent);border-radius:0}
+.lg-today{background:var(--accent)}
+.lg-day{background:var(--voice)}
+
+/* マイクの雑音消し */
+.fx{padding:14px 18px;display:grid;gap:10px}
+.fx-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 16px}
+.fx-title{margin:0;font-size:17px}
+.fx-note{font-size:13px;color:var(--muted)}
+.fx-list{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+@media (max-width:900px){.fx-list{grid-template-columns:minmax(0,1fr)}}
+.fx-item{display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"name btn" "tags btn";gap:4px 10px;align-items:center;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg)}
+.fx-item.using{border-color:var(--voice)}
+.fx-name{grid-area:name;display:grid;min-width:0}
+.fx-name b{font-size:15px}
+.fx-name span{font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.fx-tags{grid-area:tags;display:flex;flex-wrap:wrap;gap:4px 6px}
+.fx-state{font-size:12px;font-weight:900;border-radius:999px;padding:0 10px;border:1px solid var(--line);background:var(--surface);color:var(--muted)}
+.fx-state.off{background:var(--good);border-color:var(--good);color:var(--on-accent)}
+.fx-use{font-size:12px;font-weight:900;color:var(--voice)}
+.fx-item .btn{grid-area:btn}
+.fx-msg{margin:0;font-size:13.5px;color:var(--muted)}
+.fx-s{margin:0;font-size:12px;color:var(--muted);max-width:46em}
+
+/* 練習中の帯 */
+.ex{padding:14px 18px;display:grid;grid-template-columns:minmax(0,200px) minmax(0,190px) minmax(0,1fr);grid-template-areas:"id now mid" "foot foot foot";gap:10px 24px;align-items:center;border:2px solid var(--target);scroll-margin-top:12px}
+@media (max-width:900px){.ex{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"id now" "mid mid" "foot foot"}}
+.ex-id{grid-area:id;display:grid;gap:2px}
+.ex-now{grid-area:now;display:grid;gap:2px;justify-items:start}
+.ex-name{font-weight:900;font-size:16px}
+.ex-lab{font-size:12.5px;font-weight:700;color:var(--muted)}
+.ex-tgt{font-family:var(--f-disp);font-size:38px;line-height:1.15;color:var(--target)}
+.ex-nowv{font-family:var(--f-disp);font-size:38px;line-height:1.15;color:var(--voice)}
+.ex-tsub{font-size:12.5px;color:var(--muted)}
+.ex-diff{font-size:13px;font-weight:900;border-radius:999px;padding:1px 10px;background:var(--bg);border:1px solid var(--line);color:var(--muted)}
+.ex-diff.ok{background:var(--good);border-color:var(--good);color:var(--on-accent)}
+.ex-diff.off{color:var(--voice);border-color:var(--voice)}
+.ex-mid{grid-area:mid;display:grid;gap:8px;min-width:0}
+.ex-foot{grid-area:foot;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px}
+.ear{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--muted);cursor:pointer}
+.ear input{width:16px;height:16px;accent-color:var(--accent)}
+.lvl{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;align-items:center;font-size:12px;color:var(--muted)}
+.lvl-track{height:8px;border-radius:4px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
+.lvl-bar{display:block;height:100%;width:0;background:var(--muted)}
+.lvl-bar.voiced{background:var(--good)}
+.diag{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px}
+.btn-s{font-size:12.5px;padding:4px 12px}
+.diag-msg{font-size:12.5px;font-weight:700;color:var(--accent);max-width:46em}
+.ex-phase{justify-self:start;font-size:13px;font-weight:900;color:var(--target);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:2px 12px}
+.prog{height:12px;border-radius:6px;background:var(--bg);border:1px solid var(--line);overflow:hidden}
+.prog-bar{display:block;height:100%;width:0;background:var(--target);border-radius:6px}
+.prog.ok .prog-bar{background:var(--good)}
+.dots{display:flex;gap:6px;flex-wrap:wrap}
+.dot{width:30px;height:30px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--muted)}
+.dot.cur{border-color:var(--target);color:var(--target)}
+.dot.hit{background:var(--good);border-color:var(--good);color:var(--on-accent)}
+.dot.miss{background:var(--miss);border-color:var(--miss);color:var(--ink)}
+.ex-msg{margin:0;font-size:14px;max-width:46em}
+.ex-btns{display:flex;flex-wrap:wrap;gap:8px}
+
+/* 練習メニュー */
+h2{margin:0 0 12px;font-size:20px;font-weight:900;text-wrap:balance}
+.mark{background:linear-gradient(transparent 62%,var(--mark) 62%);padding-inline:2px}
+.exs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:1100px){.exs{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.exs{grid-template-columns:minmax(0,1fr)}}
+.exc{padding:14px 16px;display:grid;grid-template-rows:subgrid;grid-row:span 3;gap:8px}
+.exc.active{border-color:var(--target);box-shadow:0 0 0 2px var(--target)}
+.exc-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.exc-h h3{margin:0;font-size:16px;font-weight:900}
+.chip{font-size:12px;font-weight:700;color:var(--muted);background:var(--bg);border:1px solid var(--line);border-radius:999px;padding:0 10px}
+.exc p{margin:0;font-size:14px}
+.exc .btn{justify-self:start;align-self:end}
+
+/* 毎日の音域 */
+.log{padding:14px 16px;display:grid;gap:8px}
+.hist{width:100%;height:220px;display:block}
+.hist-empty{margin:0;color:var(--muted);font-size:14px}
+.ax{fill:var(--muted);font-size:11px;font-family:var(--f-body)}
+.ax-c{fill:var(--ink);font-weight:700}
+.gl{stroke:var(--line);stroke-width:1}
+.bar{fill:var(--voice);opacity:.85}
+.bar-today{fill:var(--accent)}
+.barl{fill:var(--ink);font-size:11px;font-weight:700;font-family:var(--f-body)}
+.bestl{stroke:var(--accent);stroke-width:1.5;stroke-dasharray:5 4}
+
+/* 注意 */
+.caution{background:var(--warn-bg);border:1.5px solid var(--mark);border-radius:16px;padding:14px 18px}
+.caution h3{margin:0 0 4px;font-size:15px;font-weight:900}
+.caution ul{margin:0;padding-left:1.2em;display:grid;gap:2px;max-width:46em}
+
+@media (prefers-reduced-motion: reduce){*{scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap hero-in">
+    <div class="hero-top">
+      <h1>高音ボイトレ</h1>
+      <div class="mic">
+        <span class="mic-state" id="micState"></span>
+        <label class="mic-sel" id="micSelWrap" hidden>使うマイク<select id="micSel"></select></label>
+        <button class="btn btn-main" id="micBtn" type="button">マイクをオン</button>
+      </div>
+    </div>
+    <div class="kpis">
+      <div class="kpi"><span class="kpi-l">今日の最高音</span><b class="kpi-v" id="kToday">—</b><span class="kpi-s" id="kTodaySub">0.4秒以上のばせた音</span></div>
+      <div class="kpi kpi-best"><span class="kpi-l">自己ベスト</span><b class="kpi-v" id="kBest">—</b><span class="kpi-s" id="kBestSub">これまでで一番高い音</span></div>
+      <div class="kpi"><span class="kpi-l">らくな高さ</span><b class="kpi-v" id="kComfy">—</b><span class="kpi-s" id="kComfySub">①のハミングで決まる</span></div>
+      <div class="kpi"><span class="kpi-l">今日声を出した時間</span><b class="kpi-v" id="kTime">0秒</b><span class="kpi-s" id="kTimeSub">声が拾えていた時間</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="card fx" id="fx">
+    <div class="fx-head">
+      <h2 class="fx-title"><span class="mark">マイクの雑音消し</span></h2>
+      <span class="fx-note" id="fxNote">切ると、まっすぐ伸ばした声も途切れない。ここで切ったものは、窓を閉じると入れ直す</span>
+    </div>
+    <div class="fx-list" id="fxList"></div>
+    <p class="fx-s">※ Windows の「オーディオの強化」のこと。この PC では AIノイズキャンセリングがここに入っている</p>
+  </section>
+
+  <section class="card ex" id="ex" hidden>
+    <div class="ex-id">
+      <span class="ex-name" id="exName"></span>
+      <b class="ex-tgt" id="exTgt">—</b>
+      <span class="ex-tsub" id="exTsub"></span>
+    </div>
+    <div class="ex-now">
+      <span class="ex-lab">いまの声</span>
+      <b class="ex-nowv" id="exNow">—</b>
+      <span class="ex-diff" id="exDiff">声を出す</span>
+    </div>
+    <div class="ex-mid">
+      <span class="ex-phase" id="exPhase"></span>
+      <div class="prog" id="exProgBox"><i class="prog-bar" id="exProg"></i></div>
+      <div class="dots" id="exDots" hidden></div>
+      <p class="ex-msg" id="exMsg"></p>
+    </div>
+    <div class="ex-foot">
+      <div class="ex-btns">
+        <button class="btn" id="exReplay" type="button">もう一度聞く</button>
+        <button class="btn" id="exDown" type="button">半音下げる</button>
+        <button class="btn" id="exUp" type="button">半音上げる</button>
+        <button class="btn" id="exStop" type="button">やめる</button>
+      </div>
+      <label class="ear"><input type="checkbox" id="ear">イヤホンで聞いている（お手本の間も声を出す）</label>
+    </div>
+  </section>
+
+  <section class="stage" id="stage">
+    <div class="card now">
+      <span class="now-l">いま出ている高さ</span>
+      <div class="now-note idle" id="nNote"><b class="now-big" id="nBig">—</b><span class="now-sol" id="nSol"></span></div>
+      <div class="now-sub" id="nSub">マイクをオンにして声を出す</div>
+      <div class="cents">
+        <div class="cents-track"><i class="cents-ok"></i><i class="cents-mid"></i><i class="cents-dot" id="cDot"></i></div>
+        <div class="cents-lab"><span>少し低い</span><span>ちょうど</span><span>少し高い</span></div>
+      </div>
+      <div class="lvl"><span>マイクに入る音</span><div class="lvl-track"><i class="lvl-bar" id="lvBar"></i></div></div>
+      <div class="diag"><button class="btn btn-s" id="diagBtn" type="button">拾えないときの録音（8秒）</button><span class="diag-msg" id="diagMsg"></span></div>
+      <p class="mic-err" id="micErr" hidden></p>
+      <p class="note-s">※ hiA・mid2G はカラオケでよく使う高さの書き方。ラ（A）を境に low → mid1 → mid2 → hi と段が上がる（hiA ＝ 440Hz）</p>
+    </div>
+    <div class="card graph">
+      <canvas id="cv" aria-label="声の高さの流れ"></canvas>
+      <div class="legend">
+        <span class="lg"><i class="lg-sw lg-voice"></i>自分の声</span>
+        <span class="lg"><i class="lg-sw lg-target"></i>お手本・目標の高さ</span>
+        <span class="lg"><i class="lg-sw lg-hit"></i>合った</span>
+        <span class="lg"><i class="lg-sw lg-best"></i>自己ベスト</span>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="mark">練習メニュー（上から順に）</span></h2>
+    <div class="exs">
+      <div class="card exc" data-ex="hum">
+        <div class="exc-h"><h3>① ハミングで準備</h3><span class="chip">1分</span></div>
+        <p>口を閉じて「んー」と、楽な高さで。終わると「らくな高さ」が決まり、③④の出だしになる。</p>
+        <button class="btn" type="button" data-start="hum">始める</button>
+      </div>
+      <div class="card exc" data-ex="siren">
+        <div class="exc-h"><h3>② サイレン</h3><span class="chip">30秒</span></div>
+        <p>「うー」か唇ぶるぶる（リップロール）で、低い所から高い所へ滑らかに上がって下がる。</p>
+        <button class="btn" type="button" data-start="siren">始める</button>
+      </div>
+      <div class="card exc" data-ex="ladder">
+        <div class="exc-h"><h3>③ ロングトーンの階段</h3><span class="chip">上がれる所まで</span></div>
+        <p>お手本と同じ高さで3秒のばす。できたら半音上がる。</p>
+        <button class="btn" type="button" data-start="ladder">始める</button>
+      </div>
+      <div class="card exc" data-ex="scale">
+        <div class="exc-h"><h3>④ 5音の階段</h3><span class="chip">上がれる所まで</span></div>
+        <p>「ドレミファソファミレド」を聞いて、まねして歌う。9音のうち6音合えば半音上がる。</p>
+        <button class="btn" type="button" data-start="scale">始める</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2><span class="mark">毎日の音域</span></h2>
+    <div class="card log">
+      <svg class="hist" id="hist" role="img" aria-label="日ごとの音域"></svg>
+      <p class="hist-empty" id="histEmpty">まだ記録がない。声を出すと、その日に出せた一番低い音から一番高い音までが棒で残る。</p>
+      <div class="legend">
+        <span class="lg"><i class="lg-sw lg-day"></i>その日の音域（0.4秒以上のばせた音）</span>
+        <span class="lg"><i class="lg-sw lg-today"></i>今日</span>
+        <span class="lg"><i class="lg-sw lg-best"></i>自己ベスト</span>
+      </div>
+    </div>
+  </section>
+
+  <aside class="caution">
+    <h3>続けるときの注意</h3>
+    <ul>
+      <li>喉が痛い・声がかすれる日は休む</li>
+      <li>叫ばない。話し声くらいの音量で出す</li>
+      <li>長い時間より、短くても毎日</li>
+      <li>記録は、このPCのこのブラウザの中にだけ残る</li>
+    </ul>
+  </aside>
+</main>
+
+<script>
+(() => {
+'use strict';
+const $ = id => document.getElementById(id);
+
+/* ---------- 音の名前 ---------- */
+const LET = ['C','C#','D','D#','E','F','F#','G','G#','A','A#','B'];
+const SOL = ['ド','ド#','レ','レ#','ミ','ファ','ファ#','ソ','ソ#','ラ','ラ#','シ'];
+const BLK = ['lowlow','low','mid1','mid2','hi','hihi'];
+const pc = n => ((n % 12) + 12) % 12;
+const kName = m => { const n = Math.round(m); const b = Math.floor((n - 21) / 12); const p = b < 0 ? 'lowlow' : (BLK[b] || 'hihihi'); return p + LET[pc(n)]; };
+const sci = m => { const n = Math.round(m); return LET[pc(n)] + (Math.floor(n / 12) - 1); };
+const sol = m => SOL[pc(Math.round(m))];
+const m2f = m => 440 * Math.pow(2, (m - 69) / 12);
+const f2m = f => 69 + 12 * Math.log2(f / 440);
+const median = a => { const s = [...a].sort((x, y) => x - y); const k = s.length >> 1; return s.length % 2 ? s[k] : (s[k - 1] + s[k]) / 2; };
+const BODY_FONT = '"Zen Kaku Gothic New","Hiragino Sans","Yu Gothic",sans-serif';
+
+/* ---------- 記録（このブラウザの中だけ） ---------- */
+const KEY = 'koon-voitore-v1';
+function loadR() {
+  try { const r = JSON.parse(localStorage.getItem(KEY) || 'null'); if (r && r.days) return r; } catch (e) {}
+  return { days: {}, best: null, bestDate: null, comfy: null, ear: false };
+}
+let R = loadR(), dirty = false;
+function saveR() { if (!dirty) return; try { localStorage.setItem(KEY, JSON.stringify(R)); dirty = false; } catch (e) {} }
+setInterval(saveR, 2000);
+addEventListener('pagehide', saveR);
+document.addEventListener('visibilitychange', () => { if (document.hidden) saveR(); });
+const dkey = (d = new Date()) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+function day() { const k = dkey(); if (!R.days[k]) R.days[k] = { high: null, low: null, sec: 0 }; return R.days[k]; }
+
+/* ---------- 音声 ---------- */
+const A = { ctx: null, out: null, an: null, buf: null, stream: null, src: null, on: false };
+let guideUntil = 0;   // お手本が鳴っている間は判定しない（マイクがお手本を拾うため）
+function ensureCtx() {
+  if (!A.ctx) {
+    A.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    A.out = A.ctx.createGain(); A.out.gain.value = 0.9; A.out.connect(A.ctx.destination);
+  }
+  return A.ctx;
+}
+function attach(node) {
+  if (!A.an) { A.an = A.ctx.createAnalyser(); A.an.fftSize = 2048; A.buf = new Float32Array(A.an.fftSize); }
+  if (A.src) { try { A.src.disconnect(); } catch (e) {} }
+  A.src = node; node.connect(A.an); A.on = true; setMicUI();
+}
+async function startMic() {
+  if (A.on) return true;
+  $('micErr').hidden = true;
+  try {
+    ensureCtx();
+    if (A.ctx.state === 'suspended') await A.ctx.resume();
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw Object.assign(new Error('no media'), { name: 'NoMedia' });
+    A.stream = await openStream(R.micId);
+    attach(A.ctx.createMediaStreamSource(A.stream));
+    fillMics(); renderFx();
+    return true;
+  } catch (e) {
+    const el = $('micErr'); el.hidden = false;
+    el.textContent = e.name === 'NotAllowedError' ? 'マイクが許可されていない。アドレスバーの左のアイコンからマイクを「許可」にして、もう一度押す'
+      : e.name === 'NotFoundError' ? 'マイクが見つからない。マイクかイヤホンマイクをつないで、もう一度押す'
+      : 'マイクを使えなかった。Chrome で開いて、もう一度押す';
+    return false;
+  }
+}
+/* 使うマイクを選ぶ。ページが聞くのは選んだ1つだけ（イヤホンのマイクと USB マイクを混ぜることはない）。
+   選ばないと Chrome の「既定」のマイクになり、イヤホンをつなぐとそちらに切り替わることがある */
+async function openStream(id) {
+  const base = { echoCancellation: false, noiseSuppression: false, autoGainControl: false, voiceIsolation: false };
+  if (id) {
+    try { return await navigator.mediaDevices.getUserMedia({ audio: Object.assign({}, base, { deviceId: { exact: id } }) }); }
+    catch (e) { if (e.name === 'NotAllowedError') throw e; }   // 抜かれたマイクなら既定で開く
+  }
+  return navigator.mediaDevices.getUserMedia({ audio: base });
+}
+async function fillMics() {
+  const sel = $('micSel'); let list = [];
+  try { list = (await navigator.mediaDevices.enumerateDevices()).filter(d => d.kind === 'audioinput'); } catch (e) { return; }
+  const tr = A.stream && A.stream.getAudioTracks()[0];
+  const curId = tr && tr.getSettings ? tr.getSettings().deviceId : '';
+  sel.innerHTML = '';
+  list.forEach((d, i) => {
+    const o = document.createElement('option'); o.value = d.deviceId;
+    o.textContent = (d.label || `マイク ${i + 1}`).replace(/^Default - /, '既定：').replace(/^Communications - /, '通話用：');
+    if (d.deviceId === curId) o.selected = true;
+    sel.appendChild(o);
+  });
+  $('micSelWrap').hidden = list.length === 0;
+}
+function resetDetector() { floor = 0.0005; lastV = -9; rawQ.length = 0; outLast = null; level = 0; }
+// マイクを開き直す（別のマイクを選んだとき・雑音消しを切り替えたとき。雑音消しは開き直した音から効く）
+async function reopenMic(id) {
+  if (!A.on) return;
+  try {
+    const s = await openStream(id);
+    if (A.stream) A.stream.getTracks().forEach(t => t.stop());
+    A.stream = s; attach(A.ctx.createMediaStreamSource(s)); resetDetector();
+  } catch (err) { const el = $('micErr'); el.hidden = false; el.textContent = 'そのマイクを開けなかった。つながっているか確かめて、もう一度選ぶ'; }
+  fillMics(); renderFx();
+}
+$('micSel').addEventListener('change', e => { R.micId = e.target.value; dirty = true; saveR(); reopenMic(R.micId); });
+
+/* ---------- マイクの雑音消し（Windows の「オーディオの強化」） ----------
+   アイコンから開くと、このPCの中だけのサーバー（launcher/server.mjs）がページを出し、合言葉 KOON_TOKEN を入れる。
+   ボタンを押したときだけ、サーバーがそのマイクの強化を切る・入れる。ファイルを直接開いたときは切り替えられない */
+const FX = { token: window.KOON_TOKEN || null, list: null, busy: false };
+async function fxApi(path, opt = {}) {
+  const r = await fetch(path, Object.assign({}, opt, { headers: { 'X-Koon-Token': FX.token, 'Content-Type': 'application/json' } }));
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.error || String(r.status));
+  return j;
+}
+const fxRole = m => /USB/i.test(m.name) ? 'USB マイク' : /Realtek/i.test(m.name) ? 'イヤホンのマイク' : /Array|AMD/i.test(m.label) ? 'PC 本体のマイク' : m.name;
+function fxMsg(text) { $('fxList').innerHTML = ''; const p = document.createElement('p'); p.className = 'fx-msg'; p.textContent = text; $('fxList').appendChild(p); }
+function renderFx() {
+  if (!FX.list) return;
+  const tr = A.stream && A.stream.getAudioTracks()[0], using = tr ? tr.label : '';
+  const box = $('fxList'); box.innerHTML = '';
+  FX.list.forEach(m => {
+    const el = document.createElement('div'); el.className = 'fx-item' + (using && using.includes(m.label) ? ' using' : '');
+    const nm = document.createElement('div'); nm.className = 'fx-name';
+    const b = document.createElement('b'); b.textContent = fxRole(m);
+    const s = document.createElement('span'); s.textContent = m.label;
+    nm.append(b, s);
+    const tags = document.createElement('div'); tags.className = 'fx-tags';
+    const st = document.createElement('span'); st.className = 'fx-state' + (m.off ? ' off' : ''); st.textContent = m.off ? '雑音消し：切' : '雑音消し：入';
+    tags.appendChild(st);
+    if (el.classList.contains('using')) { const u = document.createElement('span'); u.className = 'fx-use'; u.textContent = 'このページで使用中'; tags.appendChild(u); }
+    const btn = document.createElement('button'); btn.className = 'btn'; btn.type = 'button';
+    btn.textContent = m.off ? '入れる' : '切る'; btn.disabled = FX.busy;
+    btn.addEventListener('click', () => toggleFx(m, btn));
+    el.append(nm, tags, btn); box.appendChild(el);
+  });
+}
+async function loadFx() {
+  // インターネットに置いた版（スマホなど）では PC の設定は変えられないので、この欄を出さない
+  if (!FX.token && location.protocol !== 'file:') { $('fx').hidden = true; return; }
+  if (!FX.token) { fxMsg('デスクトップの「高音ボイトレ」アイコンから開くと、ここで3つのマイクの雑音消しを切り替えられる'); return; }
+  try { FX.list = (await fxApi('/api/mics')).mics; renderFx(); }
+  catch (e) { fxMsg('マイクの状態を読めなかった。アイコンから開き直す'); }
+}
+async function toggleFx(m, btn) {
+  FX.busy = true; renderFx();
+  const b2 = [...$('fxList').querySelectorAll('.fx-item')].find((x, i) => FX.list[i].id === m.id);
+  if (b2) b2.querySelector('.btn').textContent = '切り替え中…';
+  try {
+    const j = await fxApi('/api/mics/fx', { method: 'POST', body: JSON.stringify({ id: m.id, off: !m.off }) });
+    FX.list = j.mics;
+    $('fxNote').textContent = j.ok ? `${fxRole(m)}の雑音消しを${m.off ? '入れた' : '切った'}` : `${fxRole(m)}の雑音消しを切り替えられなかった（${j.hr || j.error}）`;
+  } catch (e) { $('fxNote').textContent = '切り替えられなかった。アイコンから開き直す'; }
+  FX.busy = false; renderFx();
+  const tr = A.stream && A.stream.getAudioTracks()[0];
+  if (tr && tr.label.includes(m.label)) reopenMic(R.micId);   // 使っているマイクなら開き直して効かせる
+}
+loadFx();
+if (FX.token) {
+  setInterval(() => { fxApi('/api/ping', { method: 'POST' }).catch(() => {}); }, 10000);
+  // 窓を閉じたら、サーバーがこのページで切ったマイクの雑音消しを入れ直す（読み直しなら、すぐ次のページが連絡するので戻らない）
+  addEventListener('pagehide', () => { try { navigator.sendBeacon('/api/bye', new Blob([JSON.stringify({ token: FX.token })], { type: 'text/plain' })); } catch (e) {} });
+}
+if (navigator.mediaDevices && navigator.mediaDevices.addEventListener) navigator.mediaDevices.addEventListener('devicechange', () => { if (A.on) fillMics(); });
+
+/* 拾えないときの録音：マイクから届いた音をそのまま8秒、WAV でダウンロードに保存する。
+   マイクの設定（Chrome が雑音消しなどをかけていないか）と、1回ごとの判定の値もファイルの中に入れる */
+let diagLog = null;
+function makeWav(chunks, n, sr, note) {
+  const enc = new TextEncoder().encode(note), pad = enc.length % 2, listSize = 4 + 8 + enc.length + pad;
+  const buf = new ArrayBuffer(12 + 24 + 8 + listSize + 8 + n * 2), v = new DataView(buf); let o = 0;
+  const str = s => { for (let i = 0; i < s.length; i++) v.setUint8(o++, s.charCodeAt(i)); };
+  const u32 = x => { v.setUint32(o, x, true); o += 4; }, u16 = x => { v.setUint16(o, x, true); o += 2; };
+  str('RIFF'); u32(buf.byteLength - 8); str('WAVE');
+  str('fmt '); u32(16); u16(1); u16(1); u32(sr); u32(sr * 2); u16(2); u16(16);
+  str('LIST'); u32(listSize); str('INFO'); str('ICMT'); u32(enc.length); new Uint8Array(buf, o, enc.length).set(enc); o += enc.length + pad;
+  str('data'); u32(n * 2);
+  let k = 0;
+  for (const c of chunks) for (let i = 0; i < c.length && k < n; i++, k++) { const s = Math.max(-1, Math.min(1, c[i])); v.setInt16(o, s < 0 ? s * 0x8000 : s * 0x7fff, true); o += 2; }
+  return new Blob([buf], { type: 'audio/wav' });
+}
+async function recordDiag() {
+  const ok = await startMic(); if (!ok) return;
+  const btn = $('diagBtn'), msg = $('diagMsg'), sr = A.ctx.sampleRate, total = sr * 8;
+  btn.disabled = true;
+  const sp = A.ctx.createScriptProcessor(4096, 1, 1), zero = A.ctx.createGain(); zero.gain.value = 0;
+  const chunks = []; let n = 0;
+  diagLog = [];
+  A.src.connect(sp); sp.connect(zero); zero.connect(A.ctx.destination);
+  await new Promise(res => {
+    sp.onaudioprocess = e => {
+      if (n >= total) return;
+      const d = e.inputBuffer.getChannelData(0); chunks.push(new Float32Array(d)); n += d.length;
+      msg.textContent = `録音中。「あー」と同じ声を出し続ける（のこり ${Math.max(0, Math.ceil((total - n) / sr))}秒）`;
+      if (n >= total) res();
+    };
+  });
+  try { A.src.disconnect(sp); } catch (e) {}
+  sp.disconnect(); zero.disconnect();
+  const tr = A.stream && A.stream.getAudioTracks()[0];
+  const info = { when: new Date().toISOString(), device: tr ? tr.label : '', settings: tr && tr.getSettings ? tr.getSettings() : null, sampleRate: sr, frames: diagLog };
+  diagLog = null;
+  const d = new Date(), p2 = x => String(x).padStart(2, '0');
+  const name = `koon-rokuon-${d.getFullYear()}${p2(d.getMonth() + 1)}${p2(d.getDate())}-${p2(d.getHours())}${p2(d.getMinutes())}${p2(d.getSeconds())}.wav`;
+  const a = document.createElement('a'); a.href = URL.createObjectURL(makeWav(chunks, Math.min(n, total), sr, JSON.stringify(info))); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  msg.textContent = `「${name}」をダウンロードに保存した。Claude に「録音した」と伝える`;
+  btn.disabled = false;
+}
+$('diagBtn').addEventListener('click', recordDiag);
+
+function stopMic() {
+  stopEx();
+  if (A.stream) { A.stream.getTracks().forEach(t => t.stop()); A.stream = null; }
+  if (A.src) { try { A.src.disconnect(); } catch (e) {} A.src = null; }
+  A.on = false; cur = null; rawQ.length = 0; outLast = null; level = 0; setMicUI(); showNow(null, false, 0);
+}
+function setMicUI() {
+  const b = $('micBtn'); b.textContent = A.on ? 'マイクをオフ' : 'マイクをオン'; b.classList.toggle('on', A.on);
+  $('micState').textContent = A.on ? '● 聞いています' : '';
+}
+function playNote(m, t0, dur, vol = 0.22) {
+  const c = A.ctx, o = c.createOscillator(), g = c.createGain();
+  o.type = 'triangle'; o.frequency.value = m2f(m);
+  g.gain.setValueAtTime(0.0001, t0);
+  g.gain.exponentialRampToValueAtTime(vol, t0 + 0.025);
+  g.gain.exponentialRampToValueAtTime(vol * 0.45, t0 + dur * 0.8);
+  g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(g); g.connect(A.out); o.start(t0); o.stop(t0 + dur + 0.02);
+}
+const click = t0 => playNote(93, t0, 0.05, 0.12);
+const chime = t0 => { playNote(84, t0, 0.14, 0.15); playNote(88, t0 + 0.11, 0.22, 0.15); };
+
+/* ---------- 高さの判定（McLeod の方法） ----------
+   2026-11-07 直し①：前は「音の大きさが一定（0.008）より小さいと全部無視」していて、小さい声や裏声を拾えなかった。
+   いまは声を出していない間の部屋の雑音の大きさを覚え、その1.6倍より大きければ調べる。声かどうかは「波の形がくり返しているか」で決める
+   直し②：「あー」を伸ばすと線が切れて戻らなかった。一瞬小さくなった声を雑音として覚え直していたのと、
+   まっすぐ伸ばした 120・150Hz などの声を電気のブーンと取り違えていたため。声が続いている間（直前0.35秒に声があった）は
+   雑音を覚え直さず、基準もゆるめる。ブーンの判定はやめた */
+let nsdf = null, floor = 0.0005, lastV = -9, level = 0;
+const learn = rms => { floor = rms < floor ? floor * 0.7 + rms * 0.3 : Math.min(rms, floor * 1.002); };
+function detect(buf, sr, t) {
+  const n = buf.length;
+  let e = 0; for (let i = 0; i < n; i++) e += buf[i] * buf[i];
+  const rms = Math.sqrt(e / n); level = rms;
+  const going = t - lastV < 0.35;
+  const quiet = () => { if (!going) learn(rms); return null; };   // 声でない時だけ、部屋の雑音の大きさを覚える
+  // 下限はごく小さくしておく（PC の雑音消しで声が弱められても拾えるように。雑音かどうかは下の「くり返し」で見分ける）
+  if (rms < Math.max(going ? 0.00005 : 0.0002, floor * (going ? 1.15 : 1.6))) return quiet();
+  const maxTau = Math.min(n >> 1, Math.floor(sr / 62)); // 62Hz まで
+  const minTau = Math.floor(sr / 1400);                 // 1400Hz まで
+  if (!nsdf || nsdf.length < maxTau + 2) nsdf = new Float32Array(maxTau + 2);
+  for (let tau = 0; tau <= maxTau + 1; tau++) {
+    let acf = 0, m = 0; const lim = n - tau;
+    for (let i = 0; i < lim; i++) { const a = buf[i], b = buf[i + tau]; acf += a * b; m += a * a + b * b; }
+    nsdf[tau] = m > 0 ? 2 * acf / m : 0;
+  }
+  const peaks = []; let pos = false, best = -1, bi = -1;
+  for (let tau = 1; tau <= maxTau; tau++) {
+    const p = nsdf[tau - 1], c = nsdf[tau];
+    if (p <= 0 && c > 0) { pos = true; best = -1; bi = -1; }
+    else if (p > 0 && c <= 0) { if (pos && bi > 0) peaks.push(bi); pos = false; }
+    if (pos && tau >= minTau && c > best) { best = c; bi = tau; }
+  }
+  if (pos && bi > 0) peaks.push(bi);
+  if (!peaks.length) return quiet();
+  let top = 0; for (const p of peaks) if (nsdf[p] > top) top = nsdf[p];
+  if (top < (going ? 0.33 : 0.45)) return quiet();     // くり返しが弱い（息・雑音）
+  let tau = peaks[0];
+  for (const p of peaks) { if (nsdf[p] >= 0.88 * top) { tau = p; break; } }
+  const a = nsdf[tau - 1], b = nsdf[tau], c = nsdf[tau + 1], den = a - 2 * b + c;
+  const f = sr / (tau + (den !== 0 ? 0.5 * (a - c) / den : 0));
+  if (f < 62 || f > 1400) return quiet();
+  lastV = t;
+  return f;
+}
+// 直近5回のうち2回以上拾えたら出す。はずれ値は落として平均。0.3秒までの取りこぼしは直前の高さでつなぐ
+const rawQ = []; let outLast = null, outT = -9;
+function smooth(m, t) {
+  rawQ.push(m); if (rawQ.length > 5) rawQ.shift();
+  if (m != null) {
+    const v = rawQ.filter(x => x != null);
+    if (v.length >= 2) {
+      const md = v.length >= 3 ? [...v].sort((x, y) => x - y)[v.length >> 1] : m;
+      const near = v.filter(x => Math.abs(x - md) <= 1);
+      outLast = near.reduce((s, x) => s + x, 0) / near.length; outT = t;
+      return outLast;
+    }
+  }
+  return (outLast != null && t - outT <= 0.3) ? outLast : null;
+}
+
+/* ---------- いまの高さの表示 ---------- */
+let cur = null, shownNote = null;
+function showNow(m, muted, t) {
+  const box = $('nNote'), dot = $('cDot'), lv = $('lvBar');
+  const db = level > 0 ? 20 * Math.log10(level) : -100;
+  lv.style.width = Math.max(0, Math.min(100, (db + 70) / 60 * 100)) + '%';
+  lv.classList.toggle('voiced', m != null && !muted);
+  if (!P.box.hidden) showExNow(m, muted, t);
+  if (muted) { box.classList.remove('idle'); $('nBig').textContent = '♪'; $('nSol').textContent = ''; $('nSub').textContent = 'お手本を再生中（イヤホンなら、この間も出せる）'; shownNote = null; dot.classList.remove('live'); return; }
+  if (m == null) {
+    box.classList.add('idle'); dot.classList.remove('live', 'ok');
+    $('nSub').textContent = A.on ? '声を出すと高さが出る' : 'マイクをオンにして声を出す';
+    return;
+  }
+  const n = Math.round(m);
+  box.classList.remove('idle');
+  if (n !== shownNote) { $('nBig').textContent = kName(n); $('nSol').textContent = sol(n); shownNote = n; }
+  $('nSub').textContent = `${sci(n)} ・ ${Math.round(m2f(m))} Hz`;
+  const c = (m - n) * 100;
+  dot.style.left = (50 + c) + '%';
+  dot.classList.add('live'); dot.classList.toggle('ok', Math.abs(c) <= 15);
+}
+// 練習中の帯の「いまの声」と、目標とのずれ
+function targetNow(t) {
+  for (const s of segs) if (t >= s.t0 && t < s.t1) return s.m;
+  return (EX && EX.target != null) ? EX.target : null;
+}
+function showExNow(m, muted, t) {
+  const v = $('exNow'), d = $('exDiff');
+  if (muted) { v.textContent = '♪'; d.textContent = 'お手本中'; d.className = 'ex-diff'; return; }
+  if (m == null) { v.textContent = '—'; d.textContent = '声を出す'; d.className = 'ex-diff'; return; }
+  v.textContent = kName(m);
+  const tg = targetNow(t);
+  if (tg == null) { d.textContent = `${sol(m)} ・ ${sci(m)}`; d.className = 'ex-diff'; return; }
+  const df = m - tg, a = Math.abs(df);
+  if (a <= 0.5) { d.textContent = 'ぴったり'; d.className = 'ex-diff ok'; return; }
+  d.className = 'ex-diff off';
+  d.textContent = df < 0 ? (a < 1.5 ? '少し低い ↑' : `${Math.round(a)}半音 低い ↑`) : (a < 1.5 ? '少し高い ↓' : `${Math.round(a)}半音 高い ↓`);
+}
+
+/* ---------- 今日の記録（0.4秒以上のばせた音だけ数える） ---------- */
+const hold = { n: null, since: 0, done: false };
+function track(t, m, dt) {
+  if (m == null) { hold.n = null; return; }
+  const d = day(); d.sec += dt; dirty = true;
+  const n = Math.round(m);
+  if (Math.abs(m - n) > 0.4) { hold.n = null; return; }
+  if (n !== hold.n) { hold.n = n; hold.since = t; hold.done = false; return; }
+  if (!hold.done && t - hold.since >= 0.4) { hold.done = true; commit(n); }
+}
+function commit(n) {
+  const d = day(); let ch = false;
+  if (d.high == null || n > d.high) { d.high = n; ch = true; }
+  if (d.low == null || n < d.low) { d.low = n; ch = true; }
+  if (R.best == null || n > R.best) { R.best = n; R.bestDate = dkey(); ch = true; }
+  if (ch) { dirty = true; renderKpis(); renderHist(); }
+}
+function renderKpis() {
+  const d = R.days[dkey()];
+  const hasD = d && d.high != null;
+  $('kToday').textContent = hasD ? kName(d.high) : '—';
+  $('kTodaySub').textContent = hasD ? `${sol(d.high)} ・ ${sci(d.high)} ・ ${Math.round(m2f(d.high))}Hz` : '0.4秒以上のばせた音';
+  $('kBest').textContent = R.best != null ? kName(R.best) : '—';
+  if (R.best != null) { const [, mo, da] = R.bestDate.split('-'); $('kBestSub').textContent = `${sol(R.best)} ・ ${+mo}/${+da} に出た`; }
+  else $('kBestSub').textContent = 'これまでで一番高い音';
+  $('kComfy').textContent = R.comfy != null ? kName(R.comfy) : '—';
+  $('kComfySub').textContent = R.comfy != null ? `${sol(R.comfy)} ・ ${sci(R.comfy)}` : '①のハミングで決まる';
+  const sec = d ? d.sec : 0;
+  $('kTime').textContent = sec < 60 ? `${Math.floor(sec)}秒` : `${Math.floor(sec / 60)}分`;
+  $('kTimeSub').textContent = hasD ? `音域 ${kName(d.low)}〜${kName(d.high)}` : '声が拾えていた時間';
+}
+
+/* ---------- 練習 ---------- */
+let EX = null, segs = [];   // segs: 高さの流れに描く目標 {t0,t1,m,role: guide|sing|hit|miss}
+const P = {
+  box: $('ex'), name: $('exName'), tgt: $('exTgt'), tsub: $('exTsub'), phase: $('exPhase'),
+  prog: $('exProg'), progBox: $('exProgBox'), dots: $('exDots'), msg: $('exMsg'),
+  replay: $('exReplay'), down: $('exDown'), up: $('exUp'), stop: $('exStop')
+};
+function panel(name, btns) {
+  P.box.hidden = false; P.name.textContent = name;
+  ['replay', 'down', 'up'].forEach(k => { P[k].hidden = !btns.includes(k); });
+  P.dots.hidden = true; P.dots.innerHTML = ''; P.stop.textContent = 'やめる'; setProg(0);
+}
+function setProg(p, ok) { P.prog.style.width = (Math.max(0, Math.min(1, p)) * 100) + '%'; P.progBox.classList.toggle('ok', !!ok); }
+function setTarget(m, sub) { P.tgt.textContent = m == null ? '—' : kName(m); P.tsub.textContent = sub != null ? sub : (m == null ? '' : `目標 ・ ${sol(m)} ・ ${sci(m)}`); }
+const startNote = () => (R.comfy != null ? R.comfy : 57);
+const left = (t, t0, dur) => 'のこり ' + Math.max(0, Math.ceil(dur - (t - t0))) + '秒';
+
+function Hum() { return {
+  start(t) {
+    this.t0 = t; this.dur = 60; this.v = []; this.voiced = 0; this.done = false; segs = [];
+    panel('① ハミングで準備', []); setTarget(null, '終わると、らくな高さが決まる');
+    P.phase.textContent = left(t, t, 60);
+    P.msg.textContent = '口を閉じて「んー」。話すときくらいの楽な高さで。少し上げ下げしてもいい';
+  },
+  update(t, m, dt) {
+    if (this.done) return;
+    if (m != null) { this.v.push(m); this.voiced += dt; }
+    setProg((t - this.t0) / this.dur); P.phase.textContent = left(t, this.t0, this.dur);
+    if (t - this.t0 >= this.dur) this.finish();
+  },
+  finish() {
+    this.done = true; P.stop.textContent = '閉じる'; P.phase.textContent = 'おわり';
+    if (this.voiced < 5) { P.msg.textContent = '声があまり拾えなかった。マイクに少し近づいて、もう一度'; return; }
+    const c = Math.round(median(this.v)); R.comfy = c; dirty = true; saveR(); renderKpis();
+    setTarget(c); setProg(1, true);
+    P.msg.textContent = `らくな高さは ${kName(c)}（${sol(c)}）。③と④はここから始まる`;
+  },
+  stop() { if (!this.done && this.voiced >= 5) { R.comfy = Math.round(median(this.v)); dirty = true; renderKpis(); } }
+}; }
+
+function Siren() { return {
+  start(t) {
+    this.t0 = t; this.dur = 30; this.hi = null; this.lo = null; this.done = false; segs = [];
+    panel('② サイレン', []); setTarget(null, 'いちばん高く出た音');
+    P.phase.textContent = left(t, t, 30);
+    P.msg.textContent = '「うー」か唇ぶるぶるで、低い所から高い所まで滑らかに上がって下がる。くり返す';
+  },
+  update(t, m) {
+    if (this.done) return;
+    if (m != null) {
+      const n = Math.round(m);
+      if (this.hi == null || n > this.hi) { this.hi = n; setTarget(n, `いちばん高く出た音 ・ ${sol(n)} ・ ${sci(n)}`); }
+      if (this.lo == null || n < this.lo) this.lo = n;
+    }
+    setProg((t - this.t0) / this.dur); P.phase.textContent = left(t, this.t0, this.dur);
+    if (t - this.t0 >= this.dur) {
+      this.done = true; P.phase.textContent = 'おわり'; P.stop.textContent = '閉じる'; setProg(1, true);
+      P.msg.textContent = this.hi == null ? '声が拾えなかった。マイクに近づいてもう一度' : `今回は ${kName(this.lo)} 〜 ${kName(this.hi)} まで出た`;
+    }
+  }
+}; }
+
+function Ladder() { return {
+  start(t) { this.target = startNote(); this.best = null; panel('③ ロングトーンの階段', ['replay', 'down', 'up']); this.begin(t); },
+  begin(t) {
+    const g0 = t + 0.15, gd = 1.3;
+    playNote(this.target, g0, gd); guideUntil = g0 + gd + 0.3;
+    this.singAt = g0 + gd + 0.35; this.singEnd = this.singAt + 12; this.prog = 0; this.phase = 'guide';
+    segs = [{ t0: g0, t1: g0 + gd, m: this.target, role: 'guide' }, { t0: this.singAt, t1: this.singEnd, m: this.target, role: 'sing' }];
+    setTarget(this.target); setProg(0); P.phase.textContent = 'お手本';
+    P.msg.textContent = 'お手本を聞いて、同じ高さで3秒のばす';
+  },
+  update(t, m, dt) {
+    if (this.phase === 'wait') { if (t >= this.nextAt) this.begin(t); return; }
+    if (this.phase === 'fail' || t < this.singAt) return;
+    this.phase = 'sing';
+    const ok = m != null && Math.abs(m - this.target) <= 0.5;
+    this.prog = ok ? this.prog + dt : Math.max(0, this.prog - dt * 0.6);
+    setProg(this.prog / 3, ok);
+    P.phase.textContent = ok ? 'その高さ！' : (m == null ? 'のばす' : (m < this.target ? 'もう少し上' : 'もう少し下'));
+    if (this.prog >= 3) {
+      this.best = Math.max(this.best == null ? -1 : this.best, this.target);
+      segs[1].t1 = t; segs[1].role = 'hit'; chime(t + 0.05); guideUntil = t + 0.75;
+      P.msg.textContent = `${kName(this.target)} クリア。半音上げる`; P.phase.textContent = 'クリア';
+      this.target++; this.phase = 'wait'; this.nextAt = t + 1.0;
+      return;
+    }
+    if (t >= this.singEnd) {
+      segs[1].role = 'miss'; this.phase = 'fail'; P.phase.textContent = 'ここまで';
+      P.msg.textContent = (this.best != null ? `クリアした一番高い音は ${kName(this.best)}。` : '') + '苦しければ今日はここまで。続けるなら「もう一度聞く」か「半音下げる」';
+    }
+  },
+  replay(t) { this.begin(t); }, down(t) { this.target--; this.begin(t); }, up(t) { this.target++; this.begin(t); }
+}; }
+
+const PAT = [0, 2, 4, 5, 7, 5, 4, 2, 0], PAT_L = ['ド', 'レ', 'ミ', 'ファ', 'ソ', 'ファ', 'ミ', 'レ', 'ド'], NL = 0.6;
+function Scale() { return {
+  start(t) { this.root = startNote() - 5; this.top = null; panel('④ 5音の階段', ['replay', 'down', 'up']); P.dots.hidden = false; this.round(t); },
+  round(t) {
+    const g0 = t + 0.2; segs = [];
+    PAT.forEach((d, i) => { const a = g0 + i * NL; playNote(this.root + d, a, NL * 0.9); segs.push({ t0: a, t1: a + NL * 0.9, m: this.root + d, role: 'guide' }); });
+    const s0 = g0 + PAT.length * NL + 1.2;
+    [0.9, 0.6, 0.3].forEach(k => click(s0 - k));
+    guideUntil = s0 - 0.05;
+    this.notes = PAT.map((d, i) => ({ t0: s0 + i * NL, t1: s0 + (i + 1) * NL, m: this.root + d, n: 0, h: 0, fin: false, ok: false }));
+    this.notes.forEach(nn => { nn.seg = { t0: nn.t0, t1: nn.t1 - 0.04, m: nn.m, role: 'sing' }; segs.push(nn.seg); });
+    this.s0 = s0; this.endAt = s0 + PAT.length * NL + 0.25; this.phase = 'run';
+    setTarget(this.root, `${sol(this.root)}から ・ 一番上は ${kName(this.root + 7)}`);
+    P.dots.innerHTML = PAT_L.map(l => `<span class="dot">${l}</span>`).join('');
+    P.msg.textContent = 'お手本を聞いて、「ピッ・ピッ・ピッ」のあとに同じように歌う'; setProg(0); P.phase.textContent = 'お手本';
+  },
+  update(t, m) {
+    if (this.phase === 'wait') { if (t >= this.nextAt) this.round(t); return; }
+    const s0 = this.s0;
+    if (t < s0 - 0.95) P.phase.textContent = 'お手本';
+    else if (t < s0) P.phase.textContent = 'せーの';
+    else P.phase.textContent = '歌う';
+    const lag = 0.12, dots = P.dots.children;
+    this.notes.forEach((nn, i) => {
+      if (nn.fin) return;
+      if (t >= nn.t0 + lag && t < nn.t1 + lag) { nn.n++; if (m != null && Math.abs(m - nn.m) <= 0.6) nn.h++; dots[i].classList.add('cur'); }
+      else if (t >= nn.t1 + lag) {
+        nn.fin = true; nn.ok = nn.n > 0 && nn.h / nn.n >= 0.4; nn.seg.role = nn.ok ? 'hit' : 'miss';
+        dots[i].classList.remove('cur'); dots[i].classList.add(nn.ok ? 'hit' : 'miss');
+      }
+    });
+    if (t >= s0) setProg((t - s0) / (this.endAt - s0));
+    if (t >= this.endAt && this.notes.every(nn => nn.fin)) {
+      const sc = this.notes.filter(nn => nn.ok).length;
+      if (sc >= 6) {
+        if (this.notes[4].ok) this.top = Math.max(this.top == null ? -1 : this.top, this.root + 7);
+        P.msg.textContent = `${sc}/9 合った。半音上げる` + (this.top != null ? `（てっぺんの最高 ${kName(this.top)}）` : '');
+        this.root++; setProg(1, true);
+      } else {
+        P.msg.textContent = `${sc}/9。同じ高さでもう一回。苦しければ「半音下げる」か「やめる」`;
+      }
+      P.phase.textContent = `${sc}/9`; this.phase = 'wait'; this.nextAt = t + 1.6;
+    }
+  },
+  replay(t) { this.round(t); }, down(t) { this.root--; this.round(t); }, up(t) { this.root++; this.round(t); }
+}; }
+
+const EXS = { hum: Hum, siren: Siren, ladder: Ladder, scale: Scale };
+async function startEx(kind) {
+  const ok = await startMic(); if (!ok) return;
+  stopEx(true);
+  EX = EXS[kind](); EX.start(A.ctx.currentTime);
+  document.querySelectorAll('.exc').forEach(c => c.classList.toggle('active', c.dataset.ex === kind));
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  P.box.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' });
+}
+// イヤホンなら、お手本の音はマイクに入らないので、お手本の間も声を調べる
+const earBox = $('ear');
+earBox.checked = !!R.ear;
+earBox.addEventListener('change', () => { R.ear = earBox.checked; dirty = true; saveR(); });
+function stopEx(keepPanel) {
+  if (EX && EX.stop) EX.stop();
+  EX = null; segs = []; guideUntil = 0;
+  if (!keepPanel) P.box.hidden = true;
+  document.querySelectorAll('.exc').forEach(c => c.classList.remove('active'));
+}
+document.querySelectorAll('[data-start]').forEach(b => b.addEventListener('click', () => startEx(b.dataset.start)));
+['replay', 'down', 'up'].forEach(k => P[k].addEventListener('click', () => { if (EX && EX[k]) EX[k](A.ctx.currentTime); }));
+P.stop.addEventListener('click', () => stopEx());
+$('micBtn').addEventListener('click', () => { if (A.on) stopMic(); else startMic(); });
+
+/* ---------- 高さの流れ（カラオケのように右から目標が流れてくる） ---------- */
+const cv = $('cv'), g2 = cv.getContext('2d');
+const col = {};
+function readColors() {
+  const s = getComputedStyle(document.documentElement);
+  ['--ink', '--muted', '--line', '--voice', '--target', '--good', '--miss', '--accent'].forEach(k => { col[k] = s.getPropertyValue(k).trim(); });
+}
+readColors();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readColors(); renderHist(); });
+function rr(c, x, y, w, h, r) {
+  r = Math.max(0, Math.min(r, w / 2, h / 2));
+  c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath();
+}
+const view = { lo: 49, hi: 65 };
+let hist = [];
+function draw(t) {
+  const dpr = window.devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+  if (!W || !H) return;
+  if (cv.width !== Math.round(W * dpr) || cv.height !== Math.round(H * dpr)) { cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr); }
+  const c = g2; c.setTransform(dpr, 0, 0, dpr, 0, 0); c.clearRect(0, 0, W, H);
+  const PAST = 6, FUT = 2.5, L = 62, RP = 10, T = 10, B = 10, pw = W - L - RP, ph = H - T - B;
+  const X = tt => L + (tt - (t - PAST)) / (PAST + FUT) * pw;
+  let lo = Infinity, hi = -Infinity;
+  for (const h of hist) if (h.m != null && h.t > t - PAST) { if (h.m < lo) lo = h.m; if (h.m > hi) hi = h.m; }
+  for (const s of segs) if (s.t1 > t - PAST && s.t0 < t + FUT) { if (s.m < lo) lo = s.m; if (s.m > hi) hi = s.m; }
+  let tlo, thi;
+  if (lo === Infinity) { const ce = startNote(); tlo = ce - 8; thi = ce + 8; }
+  else { tlo = lo - 3; thi = hi + 3; const need = 14 - (thi - tlo); if (need > 0) { tlo -= need / 2; thi += need / 2; } }
+  view.lo += (tlo - view.lo) * 0.06; view.hi += (thi - view.hi) * 0.06;
+  const Y = m => T + (view.hi - m) / (view.hi - view.lo) * ph, pps = ph / (view.hi - view.lo);
+  c.textBaseline = 'middle'; c.textAlign = 'right';
+  for (let n = Math.ceil(view.lo); n <= Math.floor(view.hi); n++) {
+    const y = Y(n), p = pc(n), isC = p === 0, nat = [0, 2, 4, 5, 7, 9, 11].includes(p);
+    c.strokeStyle = col['--line']; c.globalAlpha = isC ? 1 : (nat ? 0.7 : 0.35); c.lineWidth = isC ? 1.4 : 1;
+    c.beginPath(); c.moveTo(L, y); c.lineTo(W - RP, y); c.stroke(); c.globalAlpha = 1;
+    if (isC || p === 9 || (pps >= 13 && nat)) {
+      c.fillStyle = isC ? col['--ink'] : col['--muted']; c.font = (isC ? '700 ' : '') + '11px ' + BODY_FONT;
+      c.fillText(kName(n), L - 6, y);
+    }
+  }
+  if (R.best != null && R.best > view.lo && R.best < view.hi) {
+    const y = Y(R.best); c.setLineDash([5, 4]); c.strokeStyle = col['--accent']; c.lineWidth = 1.5;
+    c.beginPath(); c.moveTo(L, y); c.lineTo(W - RP, y); c.stroke(); c.setLineDash([]);
+    c.fillStyle = col['--accent']; c.textAlign = 'left'; c.font = '700 11px ' + BODY_FONT; c.fillText('自己ベスト ' + kName(R.best), L + 6, y - 9); c.textAlign = 'right';
+  }
+  for (const s of segs) {
+    if (s.t1 < t - PAST || s.t0 > t + FUT) continue;
+    const x0 = Math.max(L, X(s.t0)), x1 = Math.min(W - RP, X(s.t1)); if (x1 <= x0) continue;
+    const y0 = Y(s.m + 0.5), y1 = Y(s.m - 0.5);
+    c.fillStyle = s.role === 'hit' ? col['--good'] : s.role === 'miss' ? col['--miss'] : col['--target'];
+    c.globalAlpha = s.role === 'guide' ? 0.22 : (s.role === 'miss' ? 0.7 : 0.45);
+    rr(c, x0, y0, x1 - x0, y1 - y0, 4); c.fill(); c.globalAlpha = 1;
+    if (s.role === 'guide') { c.setLineDash([4, 3]); c.strokeStyle = col['--target']; c.lineWidth = 1.2; rr(c, x0, y0, x1 - x0, y1 - y0, 4); c.stroke(); c.setLineDash([]); }
+  }
+  const xn = X(t);
+  c.strokeStyle = col['--muted']; c.globalAlpha = 0.5; c.lineWidth = 1; c.beginPath(); c.moveTo(xn, T); c.lineTo(xn, H - B); c.stroke(); c.globalAlpha = 1;
+  // 声の線。0.25秒までのすき間はつなぎ、1点だけのところは点で描く
+  const runs = []; let run = null, pm = 0, pt = -9;
+  for (const h of hist) {
+    if (h.t < t - PAST || h.m == null) continue;
+    if (!run || Math.abs(h.m - pm) > 3 || h.t - pt > 0.25) { run = []; runs.push(run); }
+    run.push([X(h.t), Y(h.m)]); pm = h.m; pt = h.t;
+  }
+  c.strokeStyle = col['--voice']; c.fillStyle = col['--voice']; c.lineWidth = 3; c.lineJoin = 'round'; c.lineCap = 'round';
+  for (const r of runs) {
+    if (r.length === 1) { c.beginPath(); c.arc(r[0][0], r[0][1], 2.5, 0, Math.PI * 2); c.fill(); continue; }
+    c.beginPath(); c.moveTo(r[0][0], r[0][1]); for (let i = 1; i < r.length; i++) c.lineTo(r[i][0], r[i][1]); c.stroke();
+  }
+  if (cur != null) { c.fillStyle = col['--voice']; c.beginPath(); c.arc(xn, Y(cur), 6, 0, Math.PI * 2); c.fill(); }
+  if (!A.on) { c.fillStyle = col['--muted']; c.textAlign = 'center'; c.font = '700 14px ' + BODY_FONT; c.fillText('マイクをオンにすると、ここに声の高さが線で流れる', L + pw / 2, T + ph / 2); }
+}
+
+/* ---------- 毎日の音域 ---------- */
+function renderHist() {
+  const svg = $('hist'), W = Math.max(280, Math.round(svg.clientWidth || 700)), H = 220;
+  const N = W < 560 ? 7 : 14, days = [], now = new Date();
+  for (let i = N - 1; i >= 0; i--) { const d = new Date(now); d.setDate(now.getDate() - i); days.push(d); }
+  const recs = days.map(d => ({ d, k: dkey(d), r: R.days[dkey(d)] }));
+  const has = recs.filter(x => x.r && x.r.high != null);
+  $('histEmpty').hidden = has.length > 0;
+  let lo = has.length ? Math.min(...has.map(x => x.r.low)) - 2 : startNote() - 6;
+  let hi = has.length ? Math.max(...has.map(x => x.r.high)) + 3 : startNote() + 6;
+  if (R.best != null && has.length) hi = Math.max(hi, R.best + 2);
+  if (hi - lo < 12) { const mid = (hi + lo) / 2; lo = mid - 6; hi = mid + 6; }
+  const L = 58, RP = 8, T = 10, B = 24, pw = W - L - RP, ph = H - T - B, bw = pw / N;
+  const Y = m => T + (hi - m) / (hi - lo) * ph;
+  let s = '';
+  for (let n = Math.ceil(lo); n <= Math.floor(hi); n++) {
+    const p = pc(n); if (p !== 0 && p !== 9) continue;
+    const y = Y(n).toFixed(1);
+    s += `<line class="gl" x1="${L}" x2="${W - RP}" y1="${y}" y2="${y}"/><text class="ax${p === 0 ? ' ax-c' : ''}" x="${L - 6}" y="${y}" text-anchor="end" dominant-baseline="middle">${kName(n)}</text>`;
+  }
+  if (R.best != null && R.best > lo && R.best < hi) { const y = Y(R.best).toFixed(1); s += `<line class="bestl" x1="${L}" x2="${W - RP}" y1="${y}" y2="${y}"/>`; }
+  const tk = dkey();
+  recs.forEach((x, i) => {
+    const cx = L + bw * (i + 0.5);
+    s += `<text class="ax" x="${cx.toFixed(1)}" y="${H - 8}" text-anchor="middle">${x.d.getMonth() + 1}/${x.d.getDate()}</text>`;
+    if (x.r && x.r.high != null) {
+      const y0 = Y(x.r.high + 0.5), y1 = Y(x.r.low - 0.5), w = Math.min(28, bw * 0.56);
+      s += `<rect class="bar${x.k === tk ? ' bar-today' : ''}" x="${(cx - w / 2).toFixed(1)}" y="${y0.toFixed(1)}" width="${w.toFixed(1)}" height="${(y1 - y0).toFixed(1)}" rx="4"/>`;
+      s += `<text class="barl" x="${cx.toFixed(1)}" y="${(y0 - 6).toFixed(1)}" text-anchor="middle">${kName(x.r.high)}</text>`;
+    }
+  });
+  svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+  svg.innerHTML = s;
+}
+let rsz = 0;
+addEventListener('resize', () => { clearTimeout(rsz); rsz = setTimeout(renderHist, 150); });
+
+/* ---------- まわす ---------- */
+let lastDet = 0, lastKpi = 0;
+function frame() { requestAnimationFrame(frame); tick(); }
+function tick() {
+  const t = A.ctx ? A.ctx.currentTime : performance.now() / 1000;
+  if (A.on && t - lastDet >= 0.024) {
+    const dt = Math.min(0.1, t - lastDet); lastDet = t;
+    const muted = t < guideUntil && !R.ear;
+    let m;
+    if (muted) { smooth(null, t); m = null; level = 0; }
+    else { A.an.getFloatTimeDomainData(A.buf); const f = detect(A.buf, A.ctx.sampleRate, t); m = smooth(f ? f2m(f) : null, t); }
+    cur = m; hist.push({ t, m });
+    if (diagLog) diagLog.push([+t.toFixed(3), +level.toFixed(6), +floor.toFixed(6), m == null ? null : +m.toFixed(2)]);
+    if (!muted) track(t, m, dt);
+    if (EX) EX.update(t, m, dt);
+    showNow(m, muted, t);
+    if (t - lastKpi > 1) { lastKpi = t; renderKpis(); }
+  }
+  while (hist.length && hist[0].t < t - 9) hist.shift();
+  draw(t);
+}
+renderKpis(); renderHist(); requestAnimationFrame(frame);
+
+/* 点検用（発振器をつないで判定を試す） */
+window.__koon = { ensureCtx, attach, A, tick, startEx, get R() { return R; }, get EX() { return EX; } };
+})();
+</script>
+</body>
+</html>
